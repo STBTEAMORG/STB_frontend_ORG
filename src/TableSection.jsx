@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { apiFetch, API_URL } from "./api";
+
+// A backend címe a .env fájlból jön: VITE_API_URL=https://...azurewebsites.net
+// (a végén ne legyen perjel, és ne legyen benne /swagger vagy /api)
+const API_URL = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/+$/, "");
 
 // Egy cella értékének szöveggé alakítása (objektum/tömb/null esetén sem száll el)
 function formatCell(value) {
@@ -11,7 +14,7 @@ function formatCell(value) {
 
 // Egy adatbázistábla adatait tölti le és jeleníti meg külön szekcióban.
 // Az oszlopokat az első sor kulcsaiból veszi, így bármelyik táblával működik.
-export default function TableSection({ title, endpoint, hiddenColumns = [], onUnauthorized }) {
+export default function TableSection({ title, endpoint, hiddenColumns = [] }) {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState("loading"); // loading | ok | error
   const [error, setError] = useState("");
@@ -22,20 +25,17 @@ export default function TableSection({ title, endpoint, hiddenColumns = [], onUn
     async function load() {
       try {
         setStatus("loading");
-        const res = await apiFetch(endpoint, { signal: controller.signal });
+        const res = await fetch(`${API_URL}${endpoint}`, { signal: controller.signal });
         console.log("Lekért cím:", `${API_URL}${endpoint}`, "→ státusz:", res.status);
 
-        if (res.status === 401) {
-          onUnauthorized?.(); // lejárt vagy hiányzó token → vissza a bejelentkezéshez
-          throw new Error("401: be kell jelentkezni");
+        if (res.status === 401 || res.status === 403) {
+          throw new Error(`${res.status}: ez a végpont bejelentkezést kér`);
         }
-        if (res.status === 403) throw new Error("403: nincs jogosultságod ehhez az adathoz");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const json = await res.json();
         // Van, ahol tömböt ad vissza az API, van, ahol { data: [...] } formát
-        const list = Array.isArray(json) ? json : json.data ?? [];
-        setRows(list);
+        setRows(Array.isArray(json) ? json : json.data ?? []);
         setStatus("ok");
       } catch (err) {
         if (err.name === "AbortError") return;
@@ -46,7 +46,7 @@ export default function TableSection({ title, endpoint, hiddenColumns = [], onUn
 
     load();
     return () => controller.abort();
-  }, [endpoint]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [endpoint]);
 
   const columns =
       rows.length > 0 ? Object.keys(rows[0]).filter((c) => !hiddenColumns.includes(c)) : [];
