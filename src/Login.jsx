@@ -1,5 +1,24 @@
 import { useState } from "react";
-import { apiFetch, findToken } from "./api";
+
+// A backend címe a .env fájlból: VITE_API_URL=https://...azurewebsites.net (záró perjel, /swagger, /api nélkül)
+const API_URL = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/+$/, "");
+
+// A login válaszából kikeresi a tokent (többféle gyakori formátumot kezel,
+// mert nem tudjuk biztosan, pontosan hogyan adja vissza a backend).
+function findToken(data) {
+    if (!data) return null;
+    if (typeof data === "string") return data.split(".").length === 3 ? data : null;
+    return (
+        data.token ??
+        data.accessToken ??
+        data.access_token ??
+        data.jwt ??
+        data.session?.access_token ??
+        data.data?.token ??
+        data.data?.access_token ??
+        null
+    );
+}
 
 export default function Login({ onLogin }) {
     const [email, setEmail] = useState("");
@@ -12,8 +31,9 @@ export default function Login({ onLogin }) {
         setError("");
         setBusy(true);
         try {
-            const res = await apiFetch("/api/Auth/login", {
+            const res = await fetch(`${API_URL}/api/Auth/login`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }), // LoginDTO: email, password
             });
 
@@ -36,13 +56,13 @@ export default function Login({ onLogin }) {
 
             const token = findToken(data);
             if (!token) {
-                const keys = typeof data === "object" && data ? Object.keys(data).join(", ") : "(nem objektum)";
                 console.log("Login válasz:", data);
+                const keys = typeof data === "object" && data ? Object.keys(data).join(", ") : "(nem objektum)";
                 setError(`A válaszban nem találtam tokent. A kapott mezők: ${keys}. Nézd meg a konzolt (F12).`);
                 return;
             }
 
-            onLogin(token);
+            onLogin(token); // → az App átvált a táblák oldalára
         } catch (err) {
             setError(`Nem érem el a szervert: ${err.message}`);
         } finally {

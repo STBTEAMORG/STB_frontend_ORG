@@ -18,13 +18,21 @@ body {
   line-height: 1.5;
 }
 
+/* ---------- Táblás oldal ---------- */
 .page {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
 }
 
-.page h1 { margin: 0 0 1.5rem; font-size: 1.75rem; }
+.page__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.page__bar h1 { margin: 0; font-size: 1.75rem; }
 
 .table-section {
   background: var(--surface);
@@ -41,11 +49,10 @@ body {
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
-
 .table-section__head h2 { margin: 0; font-size: 1.2rem; }
 .table-section__count { color: var(--muted); font-size: 0.9rem; }
 
-.table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto; }
+.table-wrap { overflow: auto; max-height: 420px; }
 
 table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
 
@@ -68,20 +75,7 @@ tbody tr:hover { background: #f0f5f8; }
 .note { color: var(--muted); margin: 0.5rem 0 0; }
 .note--error { color: var(--error); }
 
-@media (prefers-reduced-motion: no-preference) {
-  tbody tr { transition: background 0.12s; }
-}
-
-/* ---------- Fejléc és bejelentkezés ---------- */
-.page__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.page__bar h1 { margin: 0; }
-
+/* ---------- Gombok ---------- */
 button {
   font: inherit;
   cursor: pointer;
@@ -94,9 +88,9 @@ button {
 button:hover:not(:disabled) { filter: brightness(1.1); }
 button:disabled { opacity: 0.6; cursor: default; }
 button:focus-visible, input:focus-visible { outline: 3px solid #8cc7da; outline-offset: 2px; }
-
 .btn-secondary { background: transparent; color: var(--accent); }
 
+/* ---------- Bejelentkezés ---------- */
 .login {
   min-height: 100vh;
   display: grid;
@@ -124,3 +118,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid #8cc7da; outline-
   border-radius: 6px;
 }
 .login__card button { margin-top: 1rem; }
+
+@media (max-width: 560px) {
+  .page__bar { flex-direction: column; align-items: flex-start; }
+}

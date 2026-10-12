@@ -1,8 +1,11 @@
+import { useState } from "react";
+import Login from "./Login";
 import TableSection from "./TableSection";
 import "./App.css";
 
+const TOKEN_KEY = "stb_token";
+
 // A végpontok a backend Swagger oldaláról vannak (…/swagger).
-// Egyesével add hozzá az újakat: ha az előző megjelent, jöhet a következő.
 const TABLES = [
     { title: "Eszközök (assets)", endpoint: "/api/Assets" },
     { title: "Termek (rooms)", endpoint: "/api/Rooms" },
@@ -20,15 +23,40 @@ const TABLES = [
 ];
 
 export default function App() {
+    // A token a böngészőben marad, így frissítés után is bejelentkezve maradsz
+    const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+
+    function handleLogin(newToken) {
+        localStorage.setItem(TOKEN_KEY, newToken);
+        setToken(newToken);
+    }
+
+    function handleLogout() {
+        localStorage.removeItem(TOKEN_KEY);
+        setToken(null);
+    }
+
+    // Nincs token → bejelentkező oldal. Sikeres belépés után a token beállításával
+    // az alábbi táblás oldal jelenik meg.
+    if (!token) return <Login onLogin={handleLogin} />;
+
     return (
         <main className="page">
-            <h1>Adatbázis áttekintés</h1>
+            <div className="page__bar">
+                <h1>Adatbázis áttekintés</h1>
+                <button type="button" className="btn-secondary" onClick={handleLogout}>
+                    Kijelentkezés
+                </button>
+            </div>
+
             {TABLES.map((t) => (
                 <TableSection
                     key={t.endpoint}
                     title={t.title}
                     endpoint={t.endpoint}
                     hiddenColumns={t.hiddenColumns}
+                    token={token}
+                    onUnauthorized={handleLogout}
                 />
             ))}
         </main>
